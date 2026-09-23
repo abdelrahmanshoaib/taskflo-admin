@@ -77,7 +77,7 @@
 
   // ─── Users + subscriptions ───
   async function listUsers() {
-    const j = await fb('/documents:runQuery', {
+    const j = await fb(':runQuery', {
       method: 'POST', headers: authHeaders(),
       body: JSON.stringify({ structuredQuery: {
         from: [{ collectionId: 'profile', allDescendants: true }],
@@ -192,7 +192,7 @@
 
   // ─── Announcements ───
   async function listAds() {
-    const j = await fb('/documents/announcements', { headers: authHeaders() }).catch(() => ({}));
+    const j = await fb('/announcements', { headers: authHeaders() }).catch(() => ({}));
     return ((j && j.documents) || []).map(d => {
       const f = d.fields || {};
       return { id: String(d.name || '').split('/').pop(), title: fv(f.title), kind: fv(f.kind) || 'image', content: fv(f.content), active: f.active ? !!fv(f.active) : true };
@@ -213,7 +213,7 @@
         tg.textContent = a.active ? 'إخفاء' : 'إظهار';
         tg.addEventListener('click', async () => {
           try {
-            await fb('/documents/announcements/' + encodeURIComponent(a.id), { method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ fields: { active: { booleanValue: !a.active } } }) });
+            await fb('/announcements/' + encodeURIComponent(a.id), { method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ fields: { active: { booleanValue: !a.active } } }) });
             renderAds();
           } catch (e) { err('❌ ' + e.message); }
         });
@@ -223,7 +223,7 @@
         del.addEventListener('click', async () => {
           if (!confirm('حذف الإعلان؟')) return;
           try {
-            await fb('/documents/announcements/' + encodeURIComponent(a.id), { method: 'DELETE', headers: authHeaders() });
+            await fb('/announcements/' + encodeURIComponent(a.id), { method: 'DELETE', headers: authHeaders() });
             renderAds();
           } catch (e) { err('❌ ' + e.message); }
         });
@@ -282,7 +282,7 @@
       const title = $('adTitle').value.trim(), kind = $('adKind').value, content = $('adContent').value.trim();
       if (!content) { err('⚠️ اكتب الرابط أو الكود'); return; }
       if (kind !== 'code' && !/^\s*https:\/\//i.test(content)) { err('⚠️ الرابط لازم يبدأ بـ https://'); return; }
-      await fb('/documents/announcements', {
+      await fb('/announcements', {
         method: 'POST', headers: authHeaders(),
         body: JSON.stringify({ fields: {
           title: { stringValue: title }, kind: { stringValue: kind }, content: { stringValue: content },
