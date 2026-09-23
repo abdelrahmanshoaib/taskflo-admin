@@ -46,8 +46,7 @@
   }
 
   // ─── Auth ───
-  async function login(email, password) {
-    const res = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=' + CFG.apiKey, {
+  async function login(email, password) {    const res = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=' + CFG.apiKey, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, returnSecureToken: true })
     });
@@ -240,6 +239,19 @@
     await renderAds();
   }
 
+  async function sendReset(email) {
+    const res = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=' + CFG.apiKey, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requestType: 'PASSWORD_RESET', email })
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const em = String((j && j.error && j.error.message) || res.status);
+      if (/EMAIL_NOT_FOUND/i.test(em)) throw new Error('مفيش حساب بالإيميل ده — اتأكد من الإيميل');
+      throw new Error(em);
+    }
+  }
+
   // ─── Boot ───
   document.getElementById('btnLogin').addEventListener('click', async () => {
     const le = $('loginErr');
@@ -250,6 +262,18 @@
     } catch (e) { le.textContent = '❌ ' + e.message; le.style.display = 'block'; }
   });
   $('loginPass').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('btnLogin').click(); });
+  document.getElementById('btnForgot').addEventListener('click', async () => {
+    const le = $('loginErr');
+    le.style.display = 'none';
+    try {
+      const email = $('loginEmail').value.trim();
+      if (!email) { le.textContent = '⚠️ اكتب الإيميل الأول'; le.style.display = 'block'; return; }
+      await sendReset(email);
+      le.style.color = '#145c2e';
+      le.textContent = '📧 اتبعتت رسالة الاسترجاع — افتح إيميلك ودوس اللينك';
+      le.style.display = 'block';
+    } catch (e) { le.textContent = '❌ ' + e.message; le.style.display = 'block'; }
+  });
   document.getElementById('btnLogout').addEventListener('click', logout);
   document.getElementById('btnRefresh').addEventListener('click', refreshAll);
   $('userSearch').addEventListener('input', () => renderUsers($('userSearch').value));
