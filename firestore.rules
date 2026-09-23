@@ -1,0 +1,51 @@
+// ─── Taskflo Firestore rules (paste in Firebase Console → Firestore → Rules → Publish)
+// 1) Replace PASTE_ADMIN_UID below with YOUR admin UID:
+//    Firebase Console → Authentication → Users → copy UID of abdelrahmanshoaib@gmail.com
+// 2) Design:
+//    - Users read/write ONLY their own docs (unspoofable request.auth.uid).
+//    - Admin (UID match) can list user profiles + read/write subscriptions.
+//    - Users WITHOUT a subscription doc keep full access (grandfathered, non-breaking).
+//    - Users WITH a subscription doc: writes to data/* require expiresAt > now (server time).
+//      → Scheduled enable/disable = just set expiresAt. No Cloud Functions needed.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function signedIn() { return request.auth != null; }
+    function isAdmin() { return signedIn() && request.auth.uid == 'KGwRkTCRWtY7v4Bc5lFrLwBxmqE2'; }
+    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+    function subDoc(uid) {
+      return get(/databases/$(db)/documents/users/$(uid)/meta/subscription).data;
+    }
+    function subActive(uid) {
+      return !exists(/databases/$(db)/documents/users/$(uid)/meta/subscription)
+        || subDoc(uid).expiresAt > request.time;
+    }
+
+    // Heartbeat profiles: owner writes own, admin lists/reads all
+    match /users/{uid}/profile/{doc=**} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if isOwner(uid);
+    }
+    match /{path=**}/profile/{doc} {
+      allow list: if isAdmin();
+    }
+
+    // Subscription control docs: admin writes, owner reads
+    match /users/{uid}/meta/subscription {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Public announcements (admin publishes, everyone reads incl. logged-out preview)
+    match /announcements/{doc} {
+      allow read, list: if true;
+      allow write: if isAdmin();
+    }
+
+    // App data: owner read/write; admin reads for dashboard stats; expired subs lose WRITE (read kept so nothing is lost)
+    match /users/{uid}/data/{doc=**} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if isOwner(uid) && (isAdmin() || subActive(uid));
+    }
+  }
+}

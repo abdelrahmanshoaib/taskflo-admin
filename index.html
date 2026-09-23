@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TaskFlow Admin — لوحة الإدارة</title>
+<style>
+  :root {
+    --bg: #eef2f7; --card: #ffffff; --border: rgba(30,45,70,.12);
+    --text: #1d2733; --muted: #6b7a90;
+    --primary: #01696f; --grad: linear-gradient(135deg, #01939b, #6d28d9);
+    --danger: #b3265c; --ok: #1c7a3d; --radius: 14px;
+    --shadow: 0 8px 24px rgba(25,45,70,.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif; color: var(--text);
+    background: radial-gradient(600px 300px at 90% 0%, rgba(1,105,111,.12), transparent 70%), var(--bg);
+    min-height: 100vh; padding: 24px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  header.top {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+  }
+  .logo {
+    width: 44px; height: 44px; border-radius: 14px; background: var(--grad);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 22px; box-shadow: var(--shadow);
+  }
+  h1 { font-size: 20px; }
+  .sub { font-size: 12px; color: var(--muted); }
+  .grow { flex: 1; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow);
+    margin-bottom: 18px;
+  }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .stat { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); }
+  .stat .n { font-size: 28px; font-weight: 800; color: var(--primary); }
+  .stat .l { font-size: 12px; color: var(--muted); }
+  input, select, textarea {
+    width: 100%; padding: 10px 12px; border-radius: 10px;
+    border: 1px solid var(--border); font-size: 14px; font-family: inherit;
+    background: #f8fafc; color: var(--text); outline: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(1,105,111,.12); }
+  button { cursor: pointer; font-family: inherit; }
+  .btn {
+    background: var(--grad); color: #fff; border: none; border-radius: 10px;
+    padding: 10px 18px; font-size: 14px; font-weight: 700;
+  }
+  .btn:hover { filter: brightness(1.07); }
+  .btn.ghost { background: #f1f5f9; color: var(--text); border: 1px solid var(--border); }
+  .btn.danger { background: var(--danger); }
+  .btn.sm { padding: 6px 12px; font-size: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 10px 8px; border-bottom: 1px solid var(--border); text-align: right; vertical-align: middle; }
+  th { color: var(--muted); font-size: 12px; }
+  tr:hover td { background: #f8fafc; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; }
+  .b-ok { background: #e6f4ea; color: var(--ok); }
+  .b-no { background: #fdecec; color: var(--danger); }
+  .b-mut { background: #eef2f7; color: var(--muted); }
+  .row-edit { display: none; }
+  tr.editing .row-view { display: none; }
+  tr.editing .row-edit { display: table-cell; }
+  .err { background: #fdecec; color: #7a1f2b; border: 1px solid #f3b8c0; border-radius: 10px; padding: 10px 12px; font-size: 13px; margin-bottom: 14px; display: none; }
+  .okmsg { background: #e6f4ea; color: #145c2e; border: 1px solid #bfe3c9; border-radius: 10px; padding: 10px 12px; font-size: 13px; margin-bottom: 14px; display: none; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 700px) { .grid2 { grid-template-columns: 1fr; } table { font-size: 12px; } }
+  .login-box { max-width: 420px; margin: 8vh auto; }
+  .login-box .card { padding: 28px; }
+  .field { margin-bottom: 12px; }
+  label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 5px; }
+  .hidden { display: none !important; }
+  code.dir { direction: ltr; unicode-bidi: embed; font-size: 11px; background: #f1f5f9; padding: 2px 6px; border-radius: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Login -->
+  <div id="viewLogin" class="login-box">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+        <div class="logo">👑</div>
+        <div><h1>TaskFlow Admin</h1><div class="sub">لوحة إدارة النظام والمستخدمين</div></div>
+      </div>
+      <div class="err" id="loginErr"></div>
+      <div class="field"><label>إيميل الأدمن</label><input id="loginEmail" type="email" dir="ltr" placeholder="abdelrahmanshoaib@gmail.com" /></div>
+      <div class="field"><label>كلمة السر</label><input id="loginPass" type="password" placeholder="••••••••" /></div>
+      <button class="btn" id="btnLogin" style="width:100%">دخول 👑</button>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="viewDash" class="hidden">
+    <header class="top">
+      <div class="logo">👑</div>
+      <div><h1>TaskFlow Admin</h1><div class="sub" id="adminEmailLine">...</div></div>
+      <div class="grow"></div>
+      <button class="btn ghost sm" id="btnRefresh">🔄 تحديث</button>
+      <button class="btn ghost sm" id="btnLogout">👋 خروج</button>
+    </header>
+
+    <div class="err" id="dashErr"></div>
+    <div class="okmsg" id="dashOk"></div>
+
+    <div class="stats">
+      <div class="stat"><div class="n" id="stUsers">—</div><div class="l">👥 المستخدمون</div></div>
+      <div class="stat"><div class="n" id="stActive">—</div><div class="l">🟢 نشط اليوم</div></div>
+      <div class="stat"><div class="n" id="stTasks">—</div><div class="l">✅ إجمالي المهام</div></div>
+      <div class="stat"><div class="n" id="stSubs">—</div><div class="l">🎫 اشتراكات نشطة</div></div>
+    </div>
+
+    <div class="card">
+      <h1 style="font-size:16px;margin-bottom:12px">👥 المستخدمون والاشتراكات</h1>
+      <div class="field"><input id="userSearch" placeholder="🔍 بحث بالإيميل..." /></div>
+      <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>المستخدم</th><th>آخر ظهور</th><th>مهام</th><th>الاشتراك</th><th></th></tr></thead>
+        <tbody id="usersBody"></tbody>
+      </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h1 style="font-size:16px;margin-bottom:12px">📢 إعلانات الصفحة الرئيسية</h1>
+      <div class="grid2" style="margin-bottom:12px">
+        <div class="field"><label>العنوان</label><input id="adTitle" placeholder="عنوان الإعلان (اختياري)" /></div>
+        <div class="field"><label>النوع</label><select id="adKind"><option value="image">🖼️ صورة</option><option value="video">🎬 فيديو/يوتيوب</option><option value="code">🧩 كود HTML</option></select></div>
+      </div>
+      <div class="field"><label>المحتوى (رابط https أو كود)</label><textarea id="adContent" dir="ltr" rows="2" placeholder="https://..."></textarea></div>
+      <button class="btn" id="btnAdAdd">➕ نشر الإعلان</button>
+      <div id="adsList" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+</div>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
